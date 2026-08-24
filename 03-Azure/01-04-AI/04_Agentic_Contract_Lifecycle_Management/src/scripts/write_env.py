@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Write the repo-root .env from deployment outputs.
 
-By default this runs as the azd `postprovision` hook (see azure.yaml) and reads
+By default this runs as the azd `postprovision` hook (see src/azure.yaml) and reads
 the provisioned values via `azd env get-values`. Pass `--deployment <name>` to
 instead read the outputs of a subscription-scoped ARM deployment (the plain-ARM
 / "Deploy to Azure" path using infra/azuredeploy.json), e.g.:
@@ -21,27 +21,33 @@ from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 ENV_PATH = REPO_ROOT / ".env"
+# azure.yaml (the azd project) lives in src/, so azd commands must run from there.
+AZD_DIR = REPO_ROOT / "src"
 
-# Keys sourced from Bicep outputs (via azd env). Fall back to the .env.example
+# Keys sourced from Bicep outputs (via azd env). Fall back to the src/.env.example
 # defaults for the constant-valued ones if an output is missing.
 DEFAULTS = {
     "MODEL_ORCHESTRATOR": "gpt-5.4",
-    "MODEL_DRAFTING": "claude-opus-4-8",
+    "MODEL_DRAFTING": "gpt-5.4",
     "MODEL_CLAUSE_RISK": "gpt-5.6-sol",
-    "MODEL_RENEWAL": "gpt-5-mini",
+    "MODEL_RENEWAL": "gpt-5.4-nano",
     "AZURE_SEARCH_INDEX": "clm-corpus",
     "AZURE_SEARCH_CONNECTION_NAME": "clm-search",
+    "FOUNDRY_IQ_KNOWLEDGE_SOURCE": "clm-corpus-ks",
+    "FOUNDRY_IQ_KNOWLEDGE_BASE": "clm-contracts-kb",
+    "FOUNDRY_IQ_CONNECTION_NAME": "clm-knowledge-mcp",
+    "FOUNDRY_IQ_API_VERSION": "2026-05-01-preview",
     "SHAREPOINT_DOC_LIBRARY": "Documents",
     "AZURE_TRACING_GEN_AI_CONTENT_RECORDING_ENABLED": "true",
 }
 
 
-def _run(cmd: list[str]) -> str:
-    """Run a command in the repo root, exiting with a friendly message on error."""
+def _run(cmd: list[str], cwd: Path = REPO_ROOT) -> str:
+    """Run a command (default cwd = repo root), exiting with a friendly message on error."""
     try:
         proc = subprocess.run(
             cmd,
-            cwd=REPO_ROOT,
+            cwd=cwd,
             capture_output=True,
             text=True,
             check=True,
@@ -55,7 +61,7 @@ def _run(cmd: list[str]) -> str:
 
 def azd_env_values() -> dict[str, str]:
     """Return azd environment values as a dict (parsing KEY="value" lines)."""
-    stdout = _run(["azd", "env", "get-values"])
+    stdout = _run(["azd", "env", "get-values"], cwd=AZD_DIR)
     values: dict[str, str] = {}
     for line in stdout.splitlines():
         line = line.strip()
@@ -115,6 +121,10 @@ MODEL_RENEWAL={get("MODEL_RENEWAL")}
 AZURE_SEARCH_ENDPOINT={get("AZURE_SEARCH_ENDPOINT")}
 AZURE_SEARCH_INDEX={get("AZURE_SEARCH_INDEX")}
 AZURE_SEARCH_CONNECTION_NAME={get("AZURE_SEARCH_CONNECTION_NAME")}
+FOUNDRY_IQ_KNOWLEDGE_SOURCE={get("FOUNDRY_IQ_KNOWLEDGE_SOURCE")}
+FOUNDRY_IQ_KNOWLEDGE_BASE={get("FOUNDRY_IQ_KNOWLEDGE_BASE")}
+FOUNDRY_IQ_CONNECTION_NAME={get("FOUNDRY_IQ_CONNECTION_NAME")}
+FOUNDRY_IQ_API_VERSION={get("FOUNDRY_IQ_API_VERSION")}
 
 # Web grounding (Grounding with Bing Search) — populated only when Bing was
 # provisioned (azd: DEPLOY_BING=true). Empty keeps web search off.
@@ -132,12 +142,6 @@ APPLICATIONINSIGHTS_CONNECTION_STRING={get("APPLICATIONINSIGHTS_CONNECTION_STRIN
 AZURE_TRACING_GEN_AI_CONTENT_RECORDING_ENABLED={get("AZURE_TRACING_GEN_AI_CONTENT_RECORDING_ENABLED")}
 
 AZURE_SQL_CONNECTION_STRING={get("AZURE_SQL_CONNECTION_STRING")}
-
-MICROSOFT_APP_ID=
-MICROSOFT_APP_PASSWORD=
-MICROSOFT_APP_TENANT_ID=
-TEAMS_SERVICE_URL=
-TEAMS_CONVERSATION_ID=
 """
 
     ENV_PATH.write_text(content, encoding="utf-8")
