@@ -1,7 +1,7 @@
 {
   // Fraud Intelligence Hack — Codespaces / Dev Container
   // Python agents + Microsoft Agent Framework orchestration + Azure tooling.
-  "name": "Fraud Intelligence Hack",
+  "name": "Azure / AI / Fraud Intelligence",
   "image": "mcr.microsoft.com/devcontainers/python:3.12-bookworm",
 
   "features": {
@@ -58,7 +58,15 @@
     "8888": { "label": "Jupyter" }
   },
 
-  "postCreateCommand": "bash .devcontainer/post-create.sh",
+  "postAttachCommand": "bash /workspaces/${localWorkspaceFolderBasename}/.devcontainer/welcome.sh",
 
-  "remoteUser": "vscode"
+  "remoteUser": "vscode",
+
+  "workspaceFolder": "/workspaces/${localWorkspaceFolderBasename}/03-Azure/01-04-AI/07_Fraud_Intelligence",
+
+  "remoteEnv": {
+    "hackFolder": "/workspaces/${localWorkspaceFolderBasename}/03-Azure/01-04-AI/07_Fraud_Intelligence",
+    "walkthroughHome": "/workspaces/${localWorkspaceFolderBasename}/03-Azure/01-04-AI/07_Fraud_Intelligence/walkthrough",
+    "challengesHome": "/workspaces/${localWorkspaceFolderBasename}/03-Azure/01-04-AI/07_Fraud_Intelligence/challenges"
+  }
 }
