@@ -10,6 +10,7 @@ import orderRoutes from './routes/order';
 import branchRoutes from './routes/branch';
 import headquartersRoutes from './routes/headquarters';
 import supplierRoutes from './routes/supplier';
+import healthRoutes from './routes/health';
 import { initializeDatabase } from './init-db';
 import { errorHandler } from './utils/errors';
 
@@ -72,6 +73,23 @@ app.get('/api-docs.json', (req, res) => {
 
 app.use(express.json());
 
+app.use((req, res, next) => {
+  const startedAt = Date.now();
+  res.on('finish', () => {
+    console.log(
+      JSON.stringify({
+        event: 'http_request',
+        method: req.method,
+        path: req.path,
+        statusCode: res.statusCode,
+        durationMs: Date.now() - startedAt,
+      }),
+    );
+  });
+  next();
+});
+
+app.use('/health', healthRoutes);
 app.use('/api/deliveries', deliveryRoutes);
 app.use('/api/order-detail-deliveries', orderDetailDeliveryRoutes);
 app.use('/api/products', productRoutes);

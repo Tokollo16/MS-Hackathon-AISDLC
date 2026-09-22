@@ -33,6 +33,12 @@ param registryLoginServer string
 @description('Environment variables for the container. Array of { name, value } objects.')
 param env array = []
 
+@description('HTTP path used by the liveness probe.')
+param livenessPath string = '/'
+
+@description('HTTP path used by the readiness probe.')
+param readinessPath string = '/'
+
 @description('Tags applied to the app.')
 param tags object = {}
 
@@ -125,12 +131,22 @@ resource containerApp 'Microsoft.App/containerApps@2024-03-01' = {
             {
               type: 'Liveness'
               httpGet: {
-                path: '/'
+                path: livenessPath
                 port: targetPort
                 scheme: 'HTTP'
               }
               initialDelaySeconds: 10
               periodSeconds: 30
+            }
+            {
+              type: 'Readiness'
+              httpGet: {
+                path: readinessPath
+                port: targetPort
+                scheme: 'HTTP'
+              }
+              initialDelaySeconds: 10
+              periodSeconds: 15
             }
           ]
         }

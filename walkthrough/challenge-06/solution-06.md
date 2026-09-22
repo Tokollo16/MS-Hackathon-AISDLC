@@ -42,6 +42,8 @@ Remediate + confirm healthy              ~4 min
 
 - Apply the fix and confirm the agent reports healthy again. Note reliability gaps as backlog items — a natural feed into Challenge 7.
 
+The repository observability implementation and SRE exercise sequence are documented in [Observability and SRE Runbook](observability-runbook.md). The local health endpoints and Container Apps probe paths are implemented; connecting the SRE Agent and running the fault exercise require an authenticated Azure subscription and deployed resources.
+
 > No optional stretch. Fast finishers should document agent-caught vs. manually-investigated findings and turn reliability gaps into backlog items.
 
 You successfully completed challenge 6! 🚀🚀🚀

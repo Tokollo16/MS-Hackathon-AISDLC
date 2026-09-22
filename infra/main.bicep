@@ -150,6 +150,8 @@ module apiApp 'modules/containerapp.bicep' = {
     registryUsername: registryUsername
     registryPassword: registryPassword
     registryIdentityResourceId: pullIdentity.id
+    livenessPath: '/health/live'
+    readinessPath: '/health/ready'
     minReplicas: minReplicas
     maxReplicas: maxReplicas
     tags: commonTags
@@ -176,6 +178,8 @@ module frontendApp 'modules/containerapp.bicep' = {
     registryUsername: registryUsername
     registryPassword: registryPassword
     registryIdentityResourceId: pullIdentity.id
+    livenessPath: '/'
+    readinessPath: '/api/health/ready'
     minReplicas: minReplicas
     maxReplicas: maxReplicas
     tags: commonTags
