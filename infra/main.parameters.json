@@ -1,0 +1,33 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentParameters.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "_comment_location": "Set this at deployment time with a region that has Container Apps capacity.",
+    "namePrefix": {
+      "value": "octocat"
+    },
+    "environmentName": {
+      "value": "dev"
+    },
+    "_comment_images": "The deployment workflow overrides these placeholders with images built in the Basic ACR.",
+    "apiImage": {
+      "value": "<acr>.azurecr.io/api:latest"
+    },
+    "frontendImage": {
+      "value": "<acr>.azurecr.io/frontend:latest"
+    },
+    "minReplicas": {
+      "value": 1
+    },
+    "maxReplicas": {
+      "value": 3
+    },
+    "_comment_registry_creds": "Leave empty: Container Apps use a user-assigned identity with an AcrPull role assignment.",
+    "registryUsername": {
+      "value": ""
+    },
+    "registryPassword": {
+      "value": ""
+    }
+  }
+}

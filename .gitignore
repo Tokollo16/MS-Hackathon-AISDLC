@@ -1,216 +1,82 @@
-# Exclude .vscode directory
-.vscode
+# .gitignore for the Agentic SDLC MicroHack
+#
+# Scoped to 03-Azure/01-04-AI/01_Agentic_SDLC/. Keeps build artifacts and local
+# runtime files out of git when participants build/run the bundled Octocat Supply
+# app (src/), the infra scaffold (infra/), or the helper scripts (scripts/).
 
-# Adaptive Apps Bicep resource-type extension generated during Challenge 03.
-/03-Azure/01-01-App Innovation/04-adaptive-apps/artifacts/*.tgz
+# OS / editor cruft
+.DS_Store
+Thumbs.db
+.idea/
+.vs/
 
-# Dev Containers feature lock file generated on the first container build.
-.devcontainer/**/devcontainer-lock.json
+# Playwright local runtime / browser cache (Makefile test targets)
+.playwright-mcp/
+src/.cache/ms-playwright/
 
-# Byte-compiled / optimized / DLL files
-__pycache__/
-*.py[cod]
-*$py.class
-
-# C extensions
-*.so
-
-# Chroma
-.chroma
-
-# Distribution / packaging
-.Python
-build/
-develop-eggs/
+# TypeScript / Node artifacts
+node_modules/
 dist/
-downloads/
-eggs/
-.eggs/
-lib/
-lib64/
-parts/
-sdist/
-var/
-wheels/
-pip-wheel-metadata/
-share/python-wheels/
+coverage/
+*.tsbuildinfo
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# .NET build artifacts
+**/[Bb]in/
+**/[Oo]bj/
+*.user
+*.rsuser
+*.suo
+*.userprefs
+*.nupkg
+*.snupkg
+TestResults/
+
+# Python artifacts
+**/__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
 *.egg-info/
-.installed.cfg
-*.egg
-MANIFEST
-
-# Exclude all .tfvars files, which are likely to contain sensitive data, such as
-# password, private keys, and other secrets. These should not be part of version
-# control as they are data points which are potentially sensitive and subject
-# to change depending on the environment.
-*.tfvars
-*.tfvars.json
-# exclude the provider.tf file on arc-enabled k8s microhack (contains subscription id)
-03-Azure/01-03-Infrastructure/03_Hybrid_Azure_Arc_Kubernetes/**/provider.tf
-
-# PyInstaller
-#  Usually these files are written by a python script from a template
-#  before PyInstaller builds the exe, so as to inject date/other infos into it.
-*.manifest
-*.spec
-
-# Installer logs
-pip-log.txt
-pip-delete-this-directory.txt
-
-# Unit test / coverage reports
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
 htmlcov/
 .tox/
 .nox/
-.coverage
-.coverage.*
-.cache
-nosetests.xml
-coverage.xml
-*.cover
-.hypothesis/
-.pytest_cache/
+.venv/
+src/api-py/uploads/
 
-# .DS_Store
-.DS_Store
+# Java artifacts
+**/target/
+*.class
+*.jar
+*.war
+*.ear
 
-# Translations
-*.mo
-*.pot
+# Local database files (SQLite runtime)
+*.db
+*.db-shm
+*.db-wal
+*.sqlite
+*.sqlite3
 
-# Django stuff:
+# General logs
 *.log
-local_settings.py
-db.sqlite3
 
-# Flask stuff:
-instance/
-.webassets-cache
-
-# Scrapy stuff:
-.scrapy
-
-# Sphinx documentation
-docs/_build/
-
-# PyBuilder
-target/
-
-# Jupyter Notebook
-.ipynb_checkpoints
-
-# IPython
-profile_default/
-ipython_config.py
-
-# pyenv
-.python-version
-
-# pipenv
-#   According to pypa/pipenv#598, it is recommended to include Pipfile.lock in version control.
-#   However, in case of collaboration, if having platform-specific dependencies or dependencies
-#   having no cross-platform support, pipenv may install dependencies that don’t work, or not
-#   install all needed dependencies.
-#Pipfile.lock
-
-# celery beat schedule file
-celerybeat-schedule
-
-# SageMath parsed files
-*.sage.py
-
-# Environments
+# Local secrets and infrastructure state
 .env
-.venv
-env/
-venv/
-ENV/
-env.bak/
-venv.bak/
-
-# Spyder project settings
-.spyderproject
-.spyproject
-
-# Rope project settings
-.ropeproject
-
-# mkdocs documentation
-/site
-
-# mypy
-.mypy_cache/
-.dmypy.json
-dmypy.json
-
-# Pyre type checker
-.pyre/
-
-# Azure Functions artifacts
-bin
-obj
-appsettings.json
-local.settings.json
-
-# Azurite artifacts
-__blobstorage__
-__queuestorage__
-__azurite_db*__.json
-.python_packages
-
-# Ignore local Azure settings
-local.settings.json
-
-# Local .terraform directories
-**/.terraform/*
-
-# .tfstate files
+.env.*
+!.env.example
+*.tfvars
+*.tfvars.json
 *.tfstate
-tfstate
 *.tfstate.*
-*tfplan
-
-# Crash log files
-crash.log
-
-# Exclude any .tfvars files that are generated automatically
-override.tf
-override.tf.json
-*_override.tf
-*_override.tf.json
-
-# Ignore CLI configuration files
-.terraformrc
-terraform.rc
-
-# Exclude CLI configuration files
-.terraform.d/plugins/
-.terraform.d/plugins/**/*
-
-# Ignore transient lock info files created by terraform apply
-.terraform.tfstate.lock.info
-
-# Ignore any .terraform.lock.hcl file
-.terraform.lock.hcl
-
-# Ignore any .tfplan files
 *.tfplan
-tfplan
-*.tfplan.*
-
-# Ignore any .terraform.tfstate.backup files
-*.tfstate.backup
-
-# Ignore any .DS_Store files
-.DS_Store
-
-# Ignore any key files
-id_rsa
-id_rsa.pub
+*.key
 *.private
 *.private.pub
-
-# Ignore ARM Parameter files
-*.parameters.json
-03-Azure/01-05-SAP/01_MicroHack-SAP-Cashflow-Prediction/SAP-Data-MicroHack.pptx
-03-Azure/01-03-Infrastructure/03_Hybrid_Azure_Arc_Kubernetes/walkthrough/challenge-04/templates/parameters-my.json
+*.parameters.local.json

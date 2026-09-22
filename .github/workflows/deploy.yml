@@ -1,0 +1,149 @@
+# =============================================================================
+# deploy.yml — Challenge 5 manual deployment workflow
+# -----------------------------------------------------------------------------
+# This workflow is manual by default and deploys the low-cost demo profile:
+#   - the `push` trigger is commented out, so it never auto-runs, and
+#   - no secrets are configured, so `azure/login` would no-op until you set them.
+#
+# Configure the documented OIDC secrets and variables before running it.
+#
+# ----- OIDC setup (no client secret is ever stored) --------------------------
+# 1. Create a user-assigned managed identity OR an app registration in Azure.
+# 2. Grant it Contributor on the target resource group (or subscription scope).
+# 3. Add a FEDERATED CREDENTIAL on it whose subject matches how this workflow
+#    runs, e.g. for the main branch:
+#        repo:<owner>/<repo>:ref:refs/heads/main
+#    (or `repo:<owner>/<repo>:environment:<env>` if you gate on an environment).
+# 4. Add these GitHub secrets — Settings > Secrets and variables > Actions:
+#        AZURE_CLIENT_ID         (the identity/app client id)
+#        AZURE_TENANT_ID
+#        AZURE_SUBSCRIPTION_ID
+#    and these repo/environment VARIABLES:
+#        AZURE_RESOURCE_GROUP    (e.g. octocat-hack-rg)
+#        AZURE_LOCATION          (e.g. eastus)
+# No AZURE_CREDENTIALS / client secret is used — auth is OIDC only.
+# =============================================================================
+
+name: Deploy to Azure (Challenge 5)
+
+on:
+  workflow_dispatch:
+  # Keep deployment manual so infrastructure changes require an explicit run.
+  # push:
+  #   branches: [ main ]
+
+# OIDC: `id-token: write` lets the job request a short-lived federated token that
+# azure/login exchanges for Azure creds. `contents: read` is for checkout.
+permissions:
+  id-token: write
+  contents: read
+
+env:
+  # Pulled from the GitHub secrets/variables described in the header comment.
+  AZURE_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+  AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+  AZURE_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+  RESOURCE_GROUP: ${{ vars.AZURE_RESOURCE_GROUP }}
+  LOCATION: ${{ vars.AZURE_LOCATION }}
+  # Must match the Bicep-derived name: <namePrefix><environmentName>acr.
+  ACR_NAME: 'octocatdevacr'
+  IMAGE_TAG: ${{ github.sha }}
+
+jobs:
+  deploy:
+    name: Provision & deploy
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: |
+            src/api-ts/package-lock.json
+            src/frontend/package-lock.json
+
+      - name: Install API dependencies
+        run: npm ci
+        working-directory: src/api-ts
+
+      - name: Install frontend dependencies
+        run: npm ci
+        working-directory: src/frontend
+
+      - name: Test API
+        run: npm test -- --run
+        working-directory: src/api-ts
+
+      - name: Install Playwright browser
+        run: npx playwright install --with-deps chromium
+        working-directory: src/frontend
+
+      - name: Test frontend
+        run: npm test
+        working-directory: src/frontend
+
+      - name: Build API
+        run: npm run build
+        working-directory: src/api-ts
+
+      - name: Build frontend
+        run: npm run build
+        working-directory: src/frontend
+
+      # OIDC login — note there is NO `creds:` input and no client secret.
+      - name: Azure login (OIDC)
+        uses: azure/login@v2
+        with:
+          client-id: ${{ env.AZURE_CLIENT_ID }}
+          tenant-id: ${{ env.AZURE_TENANT_ID }}
+          subscription-id: ${{ env.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Create resource group
+        run: |
+          az group create --name "$RESOURCE_GROUP" --location "$LOCATION" --tags project=octocat-supply managedBy=github-actions
+
+      - name: Build & push images to ACR
+        run: |
+          az acr create \
+            --name "$ACR_NAME" \
+            --resource-group "$RESOURCE_GROUP" \
+            --location "$LOCATION" \
+            --sku Basic \
+            --admin-enabled false \
+            --output none
+          az acr build --registry "$ACR_NAME" --image "api:$IMAGE_TAG" --file src/api-ts/Dockerfile src/api-ts
+          az acr build --registry "$ACR_NAME" --image "frontend:$IMAGE_TAG" --file src/frontend/Dockerfile src/frontend
+
+      - name: Deploy infrastructure (Bicep)
+        run: |
+          az deployment group what-if \
+            --name "octocat-$IMAGE_TAG-preview" \
+            --resource-group "$RESOURCE_GROUP" \
+            --template-file infra/main.bicep \
+            --parameters location="$LOCATION" namePrefix=octocat environmentName=dev \
+              apiImage="$ACR_NAME.azurecr.io/api:$IMAGE_TAG" \
+              frontendImage="$ACR_NAME.azurecr.io/frontend:$IMAGE_TAG"
+          az deployment group create \
+            --name "octocat-$IMAGE_TAG" \
+            --resource-group "$RESOURCE_GROUP" \
+            --template-file infra/main.bicep \
+            --parameters location="$LOCATION" namePrefix=octocat environmentName=dev \
+              apiImage="$ACR_NAME.azurecr.io/api:$IMAGE_TAG" \
+              frontendImage="$ACR_NAME.azurecr.io/frontend:$IMAGE_TAG" \
+            --query properties.outputs.frontendUrl.value \
+            --output tsv
+
+      - name: Verify deployed application
+        run: |
+          FRONTEND_URL=$(az deployment group show \
+            --resource-group "$RESOURCE_GROUP" \
+            --name "octocat-$IMAGE_TAG" \
+            --query properties.outputs.frontendUrl.value \
+            --output tsv)
+          echo "Deployed frontend: $FRONTEND_URL" >> "$GITHUB_STEP_SUMMARY"
+          curl --fail --retry 10 --retry-delay 10 --retry-all-errors "$FRONTEND_URL/"
+          curl --fail --retry 10 --retry-delay 10 --retry-all-errors "$FRONTEND_URL/api/products"
